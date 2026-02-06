@@ -1,4 +1,4 @@
-import api from './apiClient';
+import api from '../config/apiClient';
 import type { Usuario, LoginData, UsuarioFormData } from '../types';
 
 interface AuthResponse {

@@ -1,32 +1,11 @@
 // Exportar todas las funciones de especies
-export {
-  getAllEspecies,
-  getEspecieById,
-  createEspecie,
-  updateEspecie,
-  deleteEspecie,
-  getEspeciesDisponibles,
-} from './especieService';
+export * from './especieService';
 
 // Exportar todas las funciones de donaciones
-export {
-  getAllDonaciones,
-  getDonacionById,
-  createDonacion,
-  updateDonacion,
-  deleteDonacion,
-  getDonacionesByUsuario,
-  getDonacionesByEspecie,
-} from './donacionService';
+export * from './donacionService';
 
 // Exportar autenticación
-export {
-  login,
-  register,
-  logout,
-  getCurrentUser,
-  isAuthenticated,
-} from './authService';
+export * from './authService';
 
 // Exportar el cliente API
-export { default as api } from './apiClient';
+export { default as apiClient } from '../config/apiClient';
