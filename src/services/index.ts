@@ -19,5 +19,14 @@ export {
   getDonacionesByEspecie,
 } from './donacionService';
 
-// Exportar el cliente API por si se necesita directamente
+// Exportar autenticación
+export {
+  login,
+  register,
+  logout,
+  getCurrentUser,
+  isAuthenticated,
+} from './authService';
+
+// Exportar el cliente API
 export { default as api } from './apiClient';
