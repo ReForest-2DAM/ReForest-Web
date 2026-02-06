@@ -1,13 +1,107 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllEspecies } from '../services';
-import type { Especie } from '../types/especie';
+import { getAllEspecies, createEspecie, updateEspecie, deleteEspecie } from '../services';
+import type { Especie, EspecieFormData } from '../types/especie';
 
 export default function EspeciesList() {
   const [especies, setEspecies] = useState<Especie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<EspecieFormData>({
+    nombre_comun: '',
+    descripcion: '',
+    precio_plantacion: 0,
+    zona_geografica: '',
+    co2_anual_kg: 0,
+    altura_maxima_m: 0,
+    disponible: true,
+    fecha_temporada: '',
+    image_url: ''
+  });
   const navigate = useNavigate();
+
+  const resetForm = () => {
+    setFormData({
+      nombre_comun: '',
+      descripcion: '',
+      precio_plantacion: 0,
+      zona_geografica: '',
+      co2_anual_kg: 0,
+      altura_maxima_m: 0,
+      disponible: true,
+      fecha_temporada: '',
+      image_url: ''
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const dataToSend = {
+        ...formData,
+        fecha_temporada: formData.fecha_temporada
+          ? formData.fecha_temporada.includes('T')
+            ? formData.fecha_temporada
+            : formData.fecha_temporada + 'T00:00:00'
+          : '',
+        image_url: formData.image_url || ''
+      };
+      console.log('📤 Enviando datos:', dataToSend);
+      if (editingId !== null) {
+        const actualizada = await updateEspecie(editingId, dataToSend);
+        setEspecies(especies.map(esp => esp.id === editingId ? actualizada : esp));
+      } else {
+        const nuevaEspecie = await createEspecie(dataToSend);
+        setEspecies([...especies, nuevaEspecie]);
+      }
+      setShowModal(false);
+      setEditingId(null);
+      resetForm();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : editingId ? 'Error al actualizar la especie' : 'Error al crear la especie');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditClick = (especie: Especie) => {
+    setEditingId(especie.id);
+    setFormData({
+      nombre_comun: especie.nombre_comun,
+      descripcion: especie.descripcion,
+      precio_plantacion: especie.precio_plantacion,
+      zona_geografica: especie.zona_geografica,
+      co2_anual_kg: especie.co2_anual_kg,
+      altura_maxima_m: especie.altura_maxima_m,
+      disponible: especie.disponible,
+      fecha_temporada: especie.fecha_temporada,
+      image_url: especie.image_url
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteEspecie = async (especie: Especie) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar "${especie.nombre_comun}"?`)) return;
+    try {
+      console.log('🗑️ Eliminando especie ID:', especie.id);
+      await deleteEspecie(especie.id);
+      setEspecies(especies.filter(esp => esp.id !== especie.id));
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status: number; data: unknown } };
+      console.error('❌ Error al eliminar:', axiosErr.response?.status, axiosErr.response?.data);
+      alert(`Error al eliminar: ${axiosErr.response?.status} - ${JSON.stringify(axiosErr.response?.data)}`);
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    resetForm();
+  };
 
   useEffect(() => {
     const fetchEspecies = async () => {
@@ -58,9 +152,40 @@ export default function EspeciesList() {
       <h1 style={{ color: '#2d6a4f', marginBottom: '10px' }}>
         🌲 Lista de Especies
       </h1>
-      <p style={{ marginBottom: '2rem', color: '#555', fontSize: '16px' }}>
+      <p style={{ marginBottom: '1rem', color: '#555', fontSize: '16px' }}>
         {especies.length} especies disponibles para plantar
       </p>
+
+      <button
+        onClick={() => setShowModal(true)}
+        style={{
+          marginBottom: '2rem',
+          padding: '12px 24px',
+          backgroundColor: '#2d6a4f',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#1f4d37';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '#2d6a4f';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = 'none';
+        }}
+      >
+        ➕ Crear Nueva Especie
+      </button>
 
       {especies.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#999' }}>
@@ -198,7 +323,7 @@ export default function EspeciesList() {
                   </div>
                 </div>
 
-                {/* Botón */}
+                {/* Botón Plantar */}
                 {especie.disponible && (
                   <button
                     style={{
@@ -225,9 +350,245 @@ export default function EspeciesList() {
                     🌳 Plantar ahora
                   </button>
                 )}
+
+                {/* Botones Editar / Eliminar */}
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    onClick={() => handleEditClick(especie)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      backgroundColor: '#f0ad4e',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.3s'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9952b'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0ad4e'; }}
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    onClick={() => handleDeleteEspecie(especie)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      backgroundColor: '#d9534f',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.3s'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b52b27'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#d9534f'; }}
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal Crear Especie */}
+      {showModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={closeModal}
+        >
+          <div
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              padding: '30px',
+              width: '90%',
+              maxWidth: '550px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ color: '#2d6a4f', margin: 0 }}>{editingId ? '✏️ Editar Especie' : '🌱 Crear Nueva Especie'}</h2>
+              <button
+                onClick={closeModal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#999'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Nombre comun</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.nombre_comun}
+                  onChange={(e) => setFormData({ ...formData, nombre_comun: e.target.value })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Descripcion</label>
+                <textarea
+                  required
+                  value={formData.descripcion}
+                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                  rows={3}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Precio plantacion (€)</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    step={0.01}
+                    value={formData.precio_plantacion}
+                    onChange={(e) => setFormData({ ...formData, precio_plantacion: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>CO2 anual (kg)</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    step={0.1}
+                    value={formData.co2_anual_kg}
+                    onChange={(e) => setFormData({ ...formData, co2_anual_kg: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Zona geografica</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.zona_geografica}
+                    onChange={(e) => setFormData({ ...formData, zona_geografica: e.target.value })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Altura maxima (m)</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    step={0.1}
+                    value={formData.altura_maxima_m}
+                    onChange={(e) => setFormData({ ...formData, altura_maxima_m: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Fecha temporada</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.fecha_temporada}
+                  onChange={(e) => setFormData({ ...formData, fecha_temporada: e.target.value })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>URL de imagen</label>
+                <input
+                  type="url"
+                  value={formData.image_url}
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.disponible}
+                  onChange={(e) => setFormData({ ...formData, disponible: e.target.checked })}
+                  id="disponible-check"
+                />
+                <label htmlFor="disponible-check" style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Disponible</label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#e0e0e0',
+                    color: '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: saving ? '#88b89a' : '#2d6a4f',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: saving ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {saving ? 'Guardando...' : editingId ? '✏️ Guardar Cambios' : '🌳 Crear Especie'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
