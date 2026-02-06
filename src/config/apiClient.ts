@@ -1,9 +1,8 @@
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+import { API_BASE_URL } from './config';
 
 // Configurar axios con la base URL
-const api = axios.create({
+const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -12,7 +11,7 @@ const api = axios.create({
 });
 
 // Interceptor para agregar token JWT si existe
-api.interceptors.request.use(
+apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -23,4 +22,4 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export default api;
+export default apiClient;
