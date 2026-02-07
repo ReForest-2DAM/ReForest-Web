@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAllEspecies, createEspecie, updateEspecie, deleteEspecie, createDonacion, getCurrentUser, isAuthenticated } from '../services';
 import type { Especie, EspecieFormData } from '../types/especie';
 import type { DonacionFormData } from '../types/donacion';
 
 export default function EspeciesList() {
+  const navigate = useNavigate();
   const [especies, setEspecies] = useState<Especie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -264,7 +266,7 @@ export default function EspeciesList() {
           gap: '25px'
         }}>
           {especies.map((especie) => (
-            <div 
+            <div
               key={especie.id}
               style={{
                 border: '2px solid #2d6a4f',
@@ -273,8 +275,10 @@ export default function EspeciesList() {
                 backgroundColor: '#fff',
                 boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                 overflow: 'hidden',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
               }}
+              onClick={() => navigate(`/especies/${especie.id}`)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-8px)';
                 e.currentTarget.style.boxShadow = '0 12px 20px rgba(0,0,0,0.15)';
@@ -411,7 +415,7 @@ export default function EspeciesList() {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = '#2d6a4f';
                     }}
-                    onClick={() => handlePlantarClick(especie)}
+                    onClick={(e) => { e.stopPropagation(); handlePlantarClick(especie); }}
                   >
                     🌳 Plantar ahora
                   </button>
@@ -421,7 +425,7 @@ export default function EspeciesList() {
                 {isAdmin && (
                   <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                     <button
-                      onClick={() => handleEditClick(especie)}
+                      onClick={(e) => { e.stopPropagation(); handleEditClick(especie); }}
                       style={{
                         flex: 1,
                         padding: '10px',
@@ -440,7 +444,7 @@ export default function EspeciesList() {
                       ✏️ Editar
                     </button>
                     <button
-                      onClick={() => handleDeleteEspecie(especie)}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteEspecie(especie); }}
                       style={{
                         flex: 1,
                         padding: '10px',
