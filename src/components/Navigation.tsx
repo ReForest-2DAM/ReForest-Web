@@ -1,9 +1,16 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { logout, isAuthenticated } from '../services/authService';
 
 export default function Navigation() {
   const navigate = useNavigate();
-  const isLoggedIn = isAuthenticated();
+  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
+
+  useEffect(() => {
+    const handleAuthChange = () => setIsLoggedIn(isAuthenticated());
+    window.addEventListener('auth-change', handleAuthChange);
+    return () => window.removeEventListener('auth-change', handleAuthChange);
+  }, []);
 
   const handleLogout = () => {
     logout();

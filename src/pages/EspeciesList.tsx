@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getAllEspecies, createEspecie, updateEspecie, deleteEspecie } from '../services';
+import { getAllEspecies, createEspecie, updateEspecie, deleteEspecie, createDonacion, getCurrentUser, isAuthenticated } from '../services';
 import type { Especie, EspecieFormData } from '../types/especie';
+import type { DonacionFormData } from '../types/donacion';
 
 export default function EspeciesList() {
   const [especies, setEspecies] = useState<Especie[]>([]);
@@ -21,7 +21,57 @@ export default function EspeciesList() {
     fecha_temporada: '',
     image_url: ''
   });
-  const navigate = useNavigate();
+  const [showDonacionModal, setShowDonacionModal] = useState(false);
+  const [donacionEspecie, setDonacionEspecie] = useState<Especie | null>(null);
+  const [donacionForm, setDonacionForm] = useState({ nombre_donante: '', cantidad_arboles: 1 });
+  const [savingDonacion, setSavingDonacion] = useState(false);
+  const handlePlantarClick = (especie: Especie) => {
+    if (!isAuthenticated()) {
+      alert('Debes iniciar sesion para poder realizar una donacion.');
+      return;
+    }
+    setDonacionEspecie(especie);
+    setDonacionForm({ nombre_donante: '', cantidad_arboles: 1 });
+    setShowDonacionModal(true);
+  };
+
+  const closeDonacionModal = () => {
+    setShowDonacionModal(false);
+    setDonacionEspecie(null);
+  };
+
+  const handleDonacionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!donacionEspecie) return;
+    setSavingDonacion(true);
+    try {
+      const usuario = await getCurrentUser();
+      const donacion: DonacionFormData = {
+        fecha: new Date().toISOString().split('T')[0] + 'T00:00:00',
+        nombre_donante: donacionForm.nombre_donante,
+        cantidad_arboles: donacionForm.cantidad_arboles,
+        total_donado: donacionForm.cantidad_arboles * donacionEspecie.precio_plantacion,
+        estado: 'PENDIENTE',
+        pagado: false,
+        id_especie: donacionEspecie.id,
+        id_usuario: usuario.id
+      };
+      console.log('📤 Creando donacion:', donacion);
+      await createDonacion(donacion);
+      closeDonacionModal();
+      alert(`Donacion creada: ${donacionForm.cantidad_arboles} arbol(es) de ${donacionEspecie.nombre_comun} por ${donacion.total_donado}€`);
+    } catch (err: unknown) {
+      console.error('❌ Error completo:', err);
+      const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
+      if (axiosErr.response) {
+        alert(`Error del servidor: ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
+      } else {
+        alert(`Error: ${axiosErr.message || 'No se pudo conectar. ¿Has iniciado sesion?'}`);
+      }
+    } finally {
+      setSavingDonacion(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -345,7 +395,7 @@ export default function EspeciesList() {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = '#2d6a4f';
                     }}
-                    onClick={() => navigate('/donaciones')}
+                    onClick={() => handlePlantarClick(especie)}
                   >
                     🌳 Plantar ahora
                   </button>
@@ -585,6 +635,122 @@ export default function EspeciesList() {
                   }}
                 >
                   {saving ? 'Guardando...' : editingId ? '✏️ Guardar Cambios' : '🌳 Crear Especie'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Donacion */}
+      {showDonacionModal && donacionEspecie && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={closeDonacionModal}
+        >
+          <div
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              padding: '30px',
+              width: '90%',
+              maxWidth: '450px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ color: '#2d6a4f', margin: 0 }}>🌳 Plantar {donacionEspecie.nombre_comun}</h2>
+              <button
+                onClick={closeDonacionModal}
+                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ backgroundColor: '#f0f7f4', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '14px' }}>
+              <p style={{ margin: '4px 0' }}>💰 Precio por arbol: <strong>{donacionEspecie.precio_plantacion}€</strong></p>
+              <p style={{ margin: '4px 0' }}>🌱 CO2 absorbido/año: <strong>{donacionEspecie.co2_anual_kg} kg</strong></p>
+              <p style={{ margin: '4px 0' }}>📍 Zona: <strong>{donacionEspecie.zona_geografica}</strong></p>
+            </div>
+
+            <form onSubmit={handleDonacionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Nombre del donante</label>
+                <input
+                  type="text"
+                  required
+                  value={donacionForm.nombre_donante}
+                  onChange={(e) => setDonacionForm({ ...donacionForm, nombre_donante: e.target.value })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Cantidad de arboles</label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  value={donacionForm.cantidad_arboles}
+                  onChange={(e) => setDonacionForm({ ...donacionForm, cantidad_arboles: parseInt(e.target.value) || 1 })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ backgroundColor: '#2d6a4f', color: 'white', borderRadius: '8px', padding: '15px', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: '14px' }}>Total a donar</p>
+                <p style={{ margin: '5px 0 0', fontSize: '28px', fontWeight: 'bold' }}>
+                  {(donacionForm.cantidad_arboles * donacionEspecie.precio_plantacion).toFixed(2)}€
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={closeDonacionModal}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#e0e0e0',
+                    color: '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingDonacion}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: savingDonacion ? '#88b89a' : '#2d6a4f',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: savingDonacion ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {savingDonacion ? 'Procesando...' : '🌳 Confirmar Donacion'}
                 </button>
               </div>
             </form>
