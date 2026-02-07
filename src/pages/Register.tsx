@@ -33,7 +33,7 @@ export default function Register() {
         nombre,
         email,
         contrasena: password,
-        rol: 'usuario', // rol por defecto
+        rol: 'USER', // rol por defecto
       });
       navigate('/'); // Redirigir al home
     } catch (err: unknown) {

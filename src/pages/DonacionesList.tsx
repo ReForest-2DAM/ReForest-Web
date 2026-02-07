@@ -1,29 +1,91 @@
 import { useEffect, useState } from 'react';
-import { getAllDonaciones } from '../services';
+import { getAllDonaciones, updateDonacion, deleteDonacion } from '../services';
 import type { Donacion } from '../types';
 
 export default function DonacionesList() {
   const [donaciones, setDonaciones] = useState<Donacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingDonacion, setEditingDonacion] = useState<Donacion | null>(null);
+  const [editForm, setEditForm] = useState({ cantidad_arboles: 1, estado: '', pagado: false });
 
   useEffect(() => {
     const fetchDonaciones = async () => {
       try {
-        console.log('🔍 Llamando a getAllDonaciones...');
         const data = await getAllDonaciones();
-        console.log('✅ Donaciones recibidas:', data);
         setDonaciones(data);
       } catch (err) {
-        console.error('❌ Error al cargar donaciones:', err);
         setError(err instanceof Error ? err.message : 'Error al cargar las donaciones');
       } finally {
         setLoading(false);
       }
     };
-
     fetchDonaciones();
   }, []);
+
+  const handleEditClick = (donacion: Donacion) => {
+    setEditingDonacion(donacion);
+    setEditForm({
+      cantidad_arboles: donacion.cantidad_arboles,
+      estado: donacion.estado,
+      pagado: donacion.pagado
+    });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingDonacion(null);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDonacion) return;
+    setSaving(true);
+    try {
+      // Obtener IDs de especie y usuario (soporta tanto objetos anidados como IDs planos)
+      const especieId = editingDonacion.especie?.id ?? editingDonacion.id_especie;
+      const usuarioId = editingDonacion.usuario?.id ?? editingDonacion.id_usuario;
+
+      const dataToSend = {
+        ...editForm,
+        nombre_donante: editingDonacion.nombre_donante,
+        fecha: editingDonacion.fecha,
+        total_donado: editingDonacion.total_donado,
+        especie: { id: especieId },
+        usuario: { id: usuarioId }
+      };
+      const actualizada = await updateDonacion(editingDonacion.id, dataToSend as unknown as Partial<import('../types').DonacionFormData>);
+      setDonaciones(donaciones.map(d => d.id === editingDonacion.id ? actualizada : d));
+      closeModal();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
+      if (axiosErr.response) {
+        alert(`Error del servidor: ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
+      } else {
+        alert(axiosErr.message || 'Error al actualizar la donacion');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (donacion: Donacion) => {
+    if (!window.confirm(`¿Estas seguro de que quieres eliminar la donacion #${donacion.id}?`)) return;
+    try {
+      await deleteDonacion(donacion.id);
+      setDonaciones(donaciones.filter(d => d.id !== donacion.id));
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
+      if (axiosErr.response) {
+        alert(`Error del servidor: ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
+      } else {
+        alert(axiosErr.message || 'Error al eliminar la donacion');
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -239,19 +301,58 @@ export default function DonacionesList() {
                 </div>
               </div>
 
-              {/* IDs (para referencia) */}
+              {/* Botones Editar / Eliminar */}
               <div style={{
                 gridColumn: '1 / -1',
                 paddingTop: '0.5rem',
                 borderTop: '1px solid #e0e0e0',
-                fontSize: '12px',
-                color: '#999',
                 display: 'flex',
-                gap: '1rem'
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                <span>ID Donación: #{donacion.id}</span>
-                <span>ID Especie: #{donacion.id_especie}</span>
-                <span>ID Usuario: #{donacion.id_usuario}</span>
+                <div style={{ fontSize: '12px', color: '#999', display: 'flex', gap: '1rem' }}>
+                  <span>ID Donación: #{donacion.id}</span>
+                  <span>ID Especie: #{donacion.especie?.id ?? donacion.id_especie}</span>
+                  <span>ID Usuario: #{donacion.usuario?.id ?? donacion.id_usuario}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={() => handleEditClick(donacion)}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#f0ad4e',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.3s'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9952b'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0ad4e'; }}
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(donacion)}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#d9534f',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.3s'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b52b27'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#d9534f'; }}
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -303,6 +404,126 @@ export default function DonacionesList() {
               </p>
               <p style={{ color: '#555', fontSize: '1rem' }}>🎉 Completadas</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Donacion */}
+      {showModal && editingDonacion && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={closeModal}
+        >
+          <div
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              padding: '30px',
+              width: '90%',
+              maxWidth: '450px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ color: '#2d6a4f', margin: 0 }}>✏️ Editar Donacion #{editingDonacion.id}</h2>
+              <button
+                onClick={closeModal}
+                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ backgroundColor: '#f0f7f4', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '14px' }}>
+              <p style={{ margin: '4px 0' }}>👤 Donante: <strong>{editingDonacion.nombre_donante}</strong></p>
+              <p style={{ margin: '4px 0' }}>💵 Total: <strong>{editingDonacion.total_donado.toFixed(2)}€</strong></p>
+            </div>
+
+            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Cantidad de arboles</label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  value={editForm.cantidad_arboles}
+                  onChange={(e) => setEditForm({ ...editForm, cantidad_arboles: parseInt(e.target.value) || 1 })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Estado</label>
+                <select
+                  value={editForm.estado}
+                  onChange={(e) => setEditForm({ ...editForm, estado: e.target.value })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
+                >
+                  <option value="PENDIENTE">PENDIENTE</option>
+                  <option value="completada">Completada</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={editForm.pagado}
+                  onChange={(e) => setEditForm({ ...editForm, pagado: e.target.checked })}
+                  id="pagado-check"
+                />
+                <label htmlFor="pagado-check" style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Pagado</label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#e0e0e0',
+                    color: '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: saving ? '#88b89a' : '#2d6a4f',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: saving ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {saving ? 'Guardando...' : '✏️ Guardar Cambios'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
