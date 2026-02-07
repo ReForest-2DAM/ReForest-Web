@@ -17,9 +17,16 @@ export default function Login() {
     try {
       await login({ email, contrasena: password });
       navigate('/'); // Redirigir al home
-    } catch (err) {
-      setError('Credenciales inválidas. Por favor, inténtalo de nuevo.');
+    } catch (err: unknown) {
       console.error('Error de login:', err);
+      const error = err as { response?: { status: number; data: unknown }; message?: string };
+      if (error.message) {
+        setError(error.message);
+      } else if (error.response) {
+        setError(`Error del servidor (${error.response.status}): ${JSON.stringify(error.response.data)}`);
+      } else {
+        setError('Error de conexion con el servidor');
+      }
     } finally {
       setLoading(false);
     }

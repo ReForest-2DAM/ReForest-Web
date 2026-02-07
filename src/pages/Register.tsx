@@ -36,13 +36,18 @@ export default function Register() {
         rol: 'usuario', // rol por defecto
       });
       navigate('/'); // Redirigir al home
-    } catch (err: any) {
-      if (err.response?.status === 409) {
-        setError('Este email ya está registrado');
-      } else {
-        setError('Error al registrar usuario. Inténtalo de nuevo.');
-      }
+    } catch (err: unknown) {
       console.error('Error de registro:', err);
+      const error = err as { response?: { status: number; data: unknown }; message?: string };
+      if (error.response) {
+        if (error.response.status === 409) {
+          setError('Este email ya esta registrado');
+        } else {
+          setError(`Error del servidor (${error.response.status}): ${JSON.stringify(error.response.data)}`);
+        }
+      } else {
+        setError(error.message || 'Error de conexion con el servidor');
+      }
     } finally {
       setLoading(false);
     }
