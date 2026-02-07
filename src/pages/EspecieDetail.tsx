@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getEspecieById, createDonacion, getCurrentUser, isAuthenticated } from '../services';
 import type { Especie } from '../types/especie';
 import type { DonacionFormData } from '../types/donacion';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function EspecieDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [especie, setEspecie] = useState<Especie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export default function EspecieDetail() {
 
   const handlePlantarClick = () => {
     if (!isAuthenticated()) {
-      alert('Debes iniciar sesion para poder realizar una donacion.');
+      alert(t('especies.debesIniciar'));
       return;
     }
     setDonacionForm({ cantidad_arboles: 1 });
@@ -60,13 +62,13 @@ export default function EspecieDetail() {
       };
       await createDonacion(dataToSend as unknown as DonacionFormData);
       setShowDonacionModal(false);
-      alert('Donacion creada correctamente!');
+      alert(t('donacion.creada'));
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
       if (axiosErr.response) {
-        alert(`Error del servidor: ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
+        alert(`${t('common.errorServidor')} ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
       } else {
-        alert(`Error: ${axiosErr.message || 'No se pudo conectar. ¿Has iniciado sesion?'}`);
+        alert(`Error: ${axiosErr.message || t('common.errorConexion')}`);
       }
     } finally {
       setSavingDonacion(false);
@@ -76,7 +78,7 @@ export default function EspecieDetail() {
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px', fontSize: '20px', color: '#2d6a4f' }}>
-        🌲 Cargando especie...
+        {t('especieDetail.cargando')}
       </div>
     );
   }
@@ -84,7 +86,7 @@ export default function EspecieDetail() {
   if (error || !especie) {
     return (
       <div style={{ textAlign: 'center', padding: '50px', color: '#d00', fontSize: '18px' }}>
-        ❌ {error || 'Especie no encontrada'}
+        ❌ {error || t('especieDetail.noEncontrada')}
       </div>
     );
   }
@@ -115,7 +117,7 @@ export default function EspecieDetail() {
           e.currentTarget.style.color = '#2d6a4f';
         }}
       >
-        ← Volver a Especies
+        {t('especieDetail.volver')}
       </button>
 
       {/* Cabecera */}
@@ -164,14 +166,14 @@ export default function EspecieDetail() {
                 fontSize: '13px',
                 fontWeight: 'bold'
               }}>
-                {especie.disponible ? '✓ Disponible' : '✗ No disponible'}
+                {especie.disponible ? t('especieDetail.disponible') : t('especieDetail.noDisponible')}
               </span>
             </div>
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2d6a4f', margin: 0 }}>
                 {especie.precio_plantacion.toFixed(2)}€
               </p>
-              <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>por arbol</p>
+              <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>{t('especieDetail.porArbol')}</p>
             </div>
           </div>
 
@@ -182,9 +184,9 @@ export default function EspecieDetail() {
             backgroundColor: '#f8f9fa',
             borderRadius: '12px'
           }}>
-            <h3 style={{ color: '#2d6a4f', marginTop: 0, marginBottom: '0.5rem' }}>Descripcion</h3>
+            <h3 style={{ color: '#2d6a4f', marginTop: 0, marginBottom: '0.5rem' }}>{t('especieDetail.descripcion')}</h3>
             <p style={{ color: '#555', lineHeight: '1.6', margin: 0 }}>
-              {especie.descripcion || 'Sin descripcion disponible.'}
+              {especie.descripcion || t('especieDetail.sinDescripcion')}
             </p>
           </div>
 
@@ -196,23 +198,23 @@ export default function EspecieDetail() {
             gap: '1rem'
           }}>
             <div style={styles.statCard}>
-              <p style={styles.statLabel}>Zona Geografica</p>
-              <p style={styles.statValue}>📍 {especie.zona_geografica || 'No especificada'}</p>
+              <p style={styles.statLabel}>{t('especieDetail.zona')}</p>
+              <p style={styles.statValue}>📍 {especie.zona_geografica || t('especieDetail.noEspecificada')}</p>
             </div>
             <div style={styles.statCard}>
-              <p style={styles.statLabel}>CO2 Absorbido/Anual</p>
+              <p style={styles.statLabel}>{t('especieDetail.co2')}</p>
               <p style={styles.statValue}>🌿 {especie.co2_anual_kg} kg</p>
             </div>
             <div style={styles.statCard}>
-              <p style={styles.statLabel}>Altura Maxima</p>
+              <p style={styles.statLabel}>{t('especieDetail.altura')}</p>
               <p style={styles.statValue}>📏 {especie.altura_maxima_m} m</p>
             </div>
             <div style={styles.statCard}>
-              <p style={styles.statLabel}>Temporada</p>
+              <p style={styles.statLabel}>{t('especieDetail.temporada')}</p>
               <p style={styles.statValue}>
                 📅 {especie.fecha_temporada
                   ? new Date(especie.fecha_temporada).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-                  : 'No especificada'}
+                  : t('especieDetail.noEspecificada')}
               </p>
             </div>
           </div>
@@ -245,7 +247,7 @@ export default function EspecieDetail() {
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              🌱 Plantar Ahora
+              {t('especieDetail.plantarAhora')}
             </button>
           )}
         </div>
@@ -280,7 +282,7 @@ export default function EspecieDetail() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ color: '#2d6a4f', margin: 0 }}>🌱 Plantar {especie.nombre_comun}</h2>
+              <h2 style={{ color: '#2d6a4f', margin: 0 }}>{t('donacion.plantar')} {especie.nombre_comun}</h2>
               <button
                 onClick={() => setShowDonacionModal(false)}
                 style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}
@@ -291,7 +293,7 @@ export default function EspecieDetail() {
 
             <form onSubmit={handleDonacionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Cantidad de arboles</label>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('donacion.cantidad')}</label>
                 <input
                   type="number"
                   required
@@ -311,7 +313,7 @@ export default function EspecieDetail() {
                 fontWeight: 'bold',
                 color: '#2d6a4f'
               }}>
-                Total: {(donacionForm.cantidad_arboles * especie.precio_plantacion).toFixed(2)}€
+                {t('donacion.total')} {(donacionForm.cantidad_arboles * especie.precio_plantacion).toFixed(2)}€
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
@@ -330,7 +332,7 @@ export default function EspecieDetail() {
                     cursor: 'pointer'
                   }}
                 >
-                  Cancelar
+                  {t('common.cancelar')}
                 </button>
                 <button
                   type="submit"
@@ -347,7 +349,7 @@ export default function EspecieDetail() {
                     cursor: savingDonacion ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {savingDonacion ? 'Plantando...' : '🌳 Confirmar'}
+                  {savingDonacion ? t('donacion.plantando') : t('donacion.confirmarCorto')}
                 </button>
               </div>
             </form>

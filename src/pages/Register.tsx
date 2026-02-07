@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../services/authService';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function Register() {
   const [nombre, setNombre] = useState('');
@@ -10,19 +11,19 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validación de contraseñas
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(t('register.errorPassNoCoinciden'));
       return;
     }
 
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError(t('register.errorPassCorta'));
       return;
     }
 
@@ -33,20 +34,20 @@ export default function Register() {
         nombre,
         email,
         contrasena: password,
-        rol: 'USER', // rol por defecto
+        rol: 'USER',
       });
-      navigate('/'); // Redirigir al home
+      navigate('/');
     } catch (err: unknown) {
       console.error('Error de registro:', err);
       const error = err as { response?: { status: number; data: unknown }; message?: string };
       if (error.response) {
         if (error.response.status === 409) {
-          setError('Este email ya esta registrado');
+          setError(t('register.errorEmailRegistrado'));
         } else {
-          setError(`Error del servidor (${error.response.status}): ${JSON.stringify(error.response.data)}`);
+          setError(`${t('common.errorServidor')} ${error.response.status} - ${JSON.stringify(error.response.data)}`);
         }
       } else {
-        setError(error.message || 'Error de conexion con el servidor');
+        setError(error.message || t('register.errorConexion'));
       }
     } finally {
       setLoading(false);
@@ -56,15 +57,15 @@ export default function Register() {
   return (
     <div style={styles.container}>
       <form onSubmit={handleSubmit} style={styles.form}>
-        <h2 style={styles.title}>📝 Crear Cuenta</h2>
-        
+        <h2 style={styles.title}>{t('register.titulo')}</h2>
+
         {error && <p style={styles.error}>{error}</p>}
-        
+
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Nombre completo:</label>
+          <label style={styles.label}>{t('register.nombre')}</label>
           <input
             type="text"
-            placeholder="Tu nombre"
+            placeholder={t('register.nombrePlaceholder')}
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             style={styles.input}
@@ -73,12 +74,12 @@ export default function Register() {
             minLength={3}
           />
         </div>
-        
+
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Email:</label>
+          <label style={styles.label}>{t('register.email')}</label>
           <input
             type="email"
-            placeholder="tu@email.com"
+            placeholder={t('register.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={styles.input}
@@ -86,12 +87,12 @@ export default function Register() {
             disabled={loading}
           />
         </div>
-        
+
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Contraseña:</label>
+          <label style={styles.label}>{t('register.password')}</label>
           <input
             type="password"
-            placeholder="Mínimo 6 caracteres"
+            placeholder={t('register.passwordPlaceholder')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={styles.input}
@@ -102,10 +103,10 @@ export default function Register() {
         </div>
 
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Confirmar contraseña:</label>
+          <label style={styles.label}>{t('register.confirmPassword')}</label>
           <input
             type="password"
-            placeholder="Repite la contraseña"
+            placeholder={t('register.confirmPlaceholder')}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             style={styles.input}
@@ -113,17 +114,17 @@ export default function Register() {
             disabled={loading}
           />
         </div>
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           style={loading ? {...styles.button, ...styles.buttonDisabled} : styles.button}
           disabled={loading}
         >
-          {loading ? 'Registrando...' : 'Crear Cuenta'}
+          {loading ? t('register.loading') : t('register.crear')}
         </button>
 
         <p style={styles.loginLink}>
-          ¿Ya tienes cuenta? <Link to="/login" style={styles.link}>Inicia sesión aquí</Link>
+          {t('register.yaTienesCuenta')} <Link to="/login" style={styles.link}>{t('register.iniciaSesion')}</Link>
         </p>
       </form>
     </div>
