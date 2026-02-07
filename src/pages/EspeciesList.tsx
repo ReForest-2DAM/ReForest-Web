@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { getAllEspecies, createEspecie, updateEspecie, deleteEspecie, createDonacion, getCurrentUser, isAuthenticated } from '../services';
 import type { Especie, EspecieFormData } from '../types/especie';
 import type { DonacionFormData } from '../types/donacion';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function EspeciesList() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [especies, setEspecies] = useState<Especie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export default function EspeciesList() {
 
   const handlePlantarClick = (especie: Especie) => {
     if (!isAuthenticated()) {
-      alert('Debes iniciar sesion para poder realizar una donacion.');
+      alert(t('especies.debesIniciar'));
       return;
     }
     setDonacionEspecie(especie);
@@ -64,14 +66,14 @@ export default function EspeciesList() {
       console.log('📤 Creando donacion:', donacion);
       await createDonacion(donacion as unknown as DonacionFormData);
       closeDonacionModal();
-      alert(`Donacion creada: ${donacionForm.cantidad_arboles} arbol(es) de ${donacionEspecie.nombre_comun} por ${totalDonado}€`);
+      alert(t('donacion.creada'));
     } catch (err: unknown) {
       console.error('❌ Error completo:', err);
       const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
       if (axiosErr.response) {
-        alert(`Error del servidor: ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
+        alert(`${t('common.errorServidor')} ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
       } else {
-        alert(`Error: ${axiosErr.message || 'No se pudo conectar. ¿Has iniciado sesion?'}`);
+        alert(`${t('common.error')} ${axiosErr.message || t('common.errorConexion')}`);
       }
     } finally {
       setSavingDonacion(false);
@@ -117,7 +119,7 @@ export default function EspeciesList() {
       setEditingId(null);
       resetForm();
     } catch (err) {
-      alert(err instanceof Error ? err.message : editingId ? 'Error al actualizar la especie' : 'Error al crear la especie');
+      alert(err instanceof Error ? err.message : editingId ? t('especies.errorActualizar') : t('especies.errorCrear'));
     } finally {
       setSaving(false);
     }
@@ -140,7 +142,7 @@ export default function EspeciesList() {
   };
 
   const handleDeleteEspecie = async (especie: Especie) => {
-    if (!window.confirm(`¿Estás seguro de que quieres eliminar "${especie.nombre_comun}"?`)) return;
+    if (!window.confirm(`${t('especies.confirmarEliminar')} "${especie.nombre_comun}"?`)) return;
     try {
       console.log('🗑️ Eliminando especie ID:', especie.id);
       await deleteEspecie(especie.id);
@@ -148,7 +150,7 @@ export default function EspeciesList() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status: number; data: unknown } };
       console.error('❌ Error al eliminar:', axiosErr.response?.status, axiosErr.response?.data);
-      alert(`Error al eliminar: ${axiosErr.response?.status} - ${JSON.stringify(axiosErr.response?.data)}`);
+      alert(`${t('especies.errorEliminar')} ${axiosErr.response?.status} - ${JSON.stringify(axiosErr.response?.data)}`);
     }
   };
 
@@ -167,7 +169,7 @@ export default function EspeciesList() {
         setEspecies(data);
       } catch (err) {
         console.error('❌ Error al cargar especies:', err);
-        setError(err instanceof Error ? err.message : 'Error al cargar las especies');
+        setError(err instanceof Error ? err.message : t('especies.errorCargarLista'));
       } finally {
         setLoading(false);
       }
@@ -184,30 +186,31 @@ export default function EspeciesList() {
 
     fetchEspecies();
     checkAdmin();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
     return (
-      <div style={{ 
-        textAlign: 'center', 
+      <div style={{
+        textAlign: 'center',
         padding: '50px',
         fontSize: '20px',
         color: '#2d6a4f'
       }}>
-        🌱 Cargando especies...
+        {t('especies.cargando')}
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ 
-        textAlign: 'center', 
-        padding: '50px', 
+      <div style={{
+        textAlign: 'center',
+        padding: '50px',
         color: '#d00',
         fontSize: '18px'
       }}>
-        ❌ Error: {error}
+        ❌ {t('especies.errorCargar')} {error}
       </div>
     );
   }
@@ -215,10 +218,10 @@ export default function EspeciesList() {
   return (
     <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
       <h1 style={{ color: '#2d6a4f', marginBottom: '10px' }}>
-        🌲 Lista de Especies
+        {t('especies.titulo')}
       </h1>
       <p style={{ marginBottom: '1rem', color: '#555', fontSize: '16px' }}>
-        {especies.length} especies disponibles para plantar
+        {especies.length} {t('especies.disponibles')}
       </p>
 
       {/* Botón Crear Especie - Solo para ADMIN */}
@@ -251,13 +254,13 @@ export default function EspeciesList() {
             e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          ➕ Crear Nueva Especie
+          {t('especies.crearNueva')}
         </button>
       )}
 
       {especies.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#999' }}>
-          No hay especies disponibles
+          {t('especies.noHay')}
         </p>
       ) : (
         <div style={{
@@ -289,8 +292,8 @@ export default function EspeciesList() {
               }}
             >
               {/* Imagen */}
-              <img 
-                src={especie.image_url} 
+              <img
+                src={especie.image_url}
                 alt={especie.nombre_comun}
                 style={{
                   width: '100%',
@@ -298,7 +301,7 @@ export default function EspeciesList() {
                   objectFit: 'cover'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = 
+                  (e.target as HTMLImageElement).src =
                     'https://via.placeholder.com/320x220/2d6a4f/ffffff?text=Sin+Imagen';
                 }}
               />
@@ -306,21 +309,21 @@ export default function EspeciesList() {
               {/* Contenido */}
               <div style={{ padding: '20px' }}>
                 {/* Título y disponibilidad */}
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   marginBottom: '12px'
                 }}>
-                  <h3 style={{ 
-                    color: '#2d6a4f', 
+                  <h3 style={{
+                    color: '#2d6a4f',
                     margin: 0,
                     fontSize: '22px',
                     fontWeight: 'bold'
                   }}>
                     {especie.nombre_comun}
                   </h3>
-                  
+
                   {especie.disponible ? (
                     <span style={{
                       backgroundColor: '#d4edda',
@@ -330,7 +333,7 @@ export default function EspeciesList() {
                       fontSize: '12px',
                       fontWeight: 'bold'
                     }}>
-                      ✓ Disponible
+                      {t('especies.disponible')}
                     </span>
                   ) : (
                     <span style={{
@@ -341,14 +344,14 @@ export default function EspeciesList() {
                       fontSize: '12px',
                       fontWeight: 'bold'
                     }}>
-                      ✗ Agotado
+                      {t('especies.agotado')}
                     </span>
                   )}
                 </div>
 
                 {/* Descripción */}
-                <p style={{ 
-                  color: '#555', 
+                <p style={{
+                  color: '#555',
                   fontSize: '14px',
                   lineHeight: '1.5',
                   marginBottom: '15px',
@@ -358,25 +361,25 @@ export default function EspeciesList() {
                 </p>
 
                 {/* Datos técnicos */}
-                <div style={{ 
+                <div style={{
                   borderTop: '1px solid #e0e0e0',
                   paddingTop: '15px',
                   fontSize: '14px'
                 }}>
-                  <div style={{ 
+                  <div style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
                     gap: '10px'
                   }}>
                     <div>
-                      <strong>💰 Precio:</strong><br/>
+                      <strong>{t('especies.precio')}</strong><br/>
                       <span style={{ color: '#2d6a4f', fontSize: '18px', fontWeight: 'bold' }}>
                         {especie.precio_plantacion}€
                       </span>
                     </div>
-                    
+
                     <div>
-                      <strong>🌱 CO₂/año:</strong><br/>
+                      <strong>{t('especies.co2')}</strong><br/>
                       <span style={{ color: '#2d6a4f', fontWeight: 'bold' }}>
                         {especie.co2_anual_kg} kg
                       </span>
@@ -385,10 +388,10 @@ export default function EspeciesList() {
 
                   <div style={{ marginTop: '10px' }}>
                     <p style={{ margin: '5px 0' }}>
-                      <strong>📍 Zona:</strong> {especie.zona_geografica}
+                      <strong>{t('especies.zona')}</strong> {especie.zona_geografica}
                     </p>
                     <p style={{ margin: '5px 0' }}>
-                      <strong>📏 Altura máx.:</strong> {especie.altura_maxima_m}m
+                      <strong>{t('especies.altura')}</strong> {especie.altura_maxima_m}m
                     </p>
                   </div>
                 </div>
@@ -417,7 +420,7 @@ export default function EspeciesList() {
                     }}
                     onClick={(e) => { e.stopPropagation(); handlePlantarClick(especie); }}
                   >
-                    🌳 Plantar ahora
+                    {t('especies.plantarAhora')}
                   </button>
                 )}
 
@@ -441,7 +444,7 @@ export default function EspeciesList() {
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9952b'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0ad4e'; }}
                     >
-                      ✏️ Editar
+                      {t('common.editar')}
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteEspecie(especie); }}
@@ -460,7 +463,7 @@ export default function EspeciesList() {
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b52b27'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#d9534f'; }}
                     >
-                      🗑️ Eliminar
+                      {t('common.eliminar')}
                     </button>
                   </div>
                 )}
@@ -501,7 +504,7 @@ export default function EspeciesList() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ color: '#2d6a4f', margin: 0 }}>{editingId ? '✏️ Editar Especie' : '🌱 Crear Nueva Especie'}</h2>
+              <h2 style={{ color: '#2d6a4f', margin: 0 }}>{editingId ? t('especieForm.editarTitulo') : t('especieForm.crearTitulo')}</h2>
               <button
                 onClick={closeModal}
                 style={{
@@ -518,7 +521,7 @@ export default function EspeciesList() {
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Nombre comun</label>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.nombre')}</label>
                 <input
                   type="text"
                   required
@@ -529,7 +532,7 @@ export default function EspeciesList() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Descripcion</label>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.descripcion')}</label>
                 <textarea
                   required
                   value={formData.descripcion}
@@ -541,7 +544,7 @@ export default function EspeciesList() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Precio plantacion (€)</label>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.precio')}</label>
                   <input
                     type="number"
                     required
@@ -553,7 +556,7 @@ export default function EspeciesList() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>CO2 anual (kg)</label>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.co2')}</label>
                   <input
                     type="number"
                     required
@@ -568,7 +571,7 @@ export default function EspeciesList() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Zona geografica</label>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.zona')}</label>
                   <input
                     type="text"
                     required
@@ -578,7 +581,7 @@ export default function EspeciesList() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Altura maxima (m)</label>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.altura')}</label>
                   <input
                     type="number"
                     required
@@ -592,7 +595,7 @@ export default function EspeciesList() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Fecha temporada</label>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.fecha')}</label>
                 <input
                   type="date"
                   required
@@ -603,12 +606,12 @@ export default function EspeciesList() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>URL de imagen</label>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.imagen')}</label>
                 <input
                   type="url"
                   value={formData.image_url}
                   onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://ejemplo.com/imagen.jpg"
+                  placeholder={t('especieForm.imagenPlaceholder')}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
@@ -620,7 +623,7 @@ export default function EspeciesList() {
                   onChange={(e) => setFormData({ ...formData, disponible: e.target.checked })}
                   id="disponible-check"
                 />
-                <label htmlFor="disponible-check" style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Disponible</label>
+                <label htmlFor="disponible-check" style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('especieForm.disponible')}</label>
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
@@ -639,7 +642,7 @@ export default function EspeciesList() {
                     cursor: 'pointer'
                   }}
                 >
-                  Cancelar
+                  {t('common.cancelar')}
                 </button>
                 <button
                   type="submit"
@@ -656,7 +659,7 @@ export default function EspeciesList() {
                     cursor: saving ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {saving ? 'Guardando...' : editingId ? '✏️ Guardar Cambios' : '🌳 Crear Especie'}
+                  {saving ? t('common.guardando') : editingId ? t('common.guardarCambios') : t('common.crearEspecie')}
                 </button>
               </div>
             </form>
@@ -693,7 +696,7 @@ export default function EspeciesList() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ color: '#2d6a4f', margin: 0 }}>🌳 Plantar {donacionEspecie.nombre_comun}</h2>
+              <h2 style={{ color: '#2d6a4f', margin: 0 }}>{t('donacion.plantar')} {donacionEspecie.nombre_comun}</h2>
               <button
                 onClick={closeDonacionModal}
                 style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}
@@ -703,14 +706,14 @@ export default function EspeciesList() {
             </div>
 
             <div style={{ backgroundColor: '#f0f7f4', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '14px' }}>
-              <p style={{ margin: '4px 0' }}>💰 Precio por arbol: <strong>{donacionEspecie.precio_plantacion}€</strong></p>
-              <p style={{ margin: '4px 0' }}>🌱 CO2 absorbido/año: <strong>{donacionEspecie.co2_anual_kg} kg</strong></p>
-              <p style={{ margin: '4px 0' }}>📍 Zona: <strong>{donacionEspecie.zona_geografica}</strong></p>
+              <p style={{ margin: '4px 0' }}>{t('donacion.precioArbol')} <strong>{donacionEspecie.precio_plantacion}€</strong></p>
+              <p style={{ margin: '4px 0' }}>{t('donacion.co2Arbol')} <strong>{donacionEspecie.co2_anual_kg} kg</strong></p>
+              <p style={{ margin: '4px 0' }}>{t('donacion.zonaModal')} <strong>{donacionEspecie.zona_geografica}</strong></p>
             </div>
 
             <form onSubmit={handleDonacionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Cantidad de arboles</label>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('donacion.cantidad')}</label>
                 <input
                   type="number"
                   required
@@ -722,7 +725,7 @@ export default function EspeciesList() {
               </div>
 
               <div style={{ backgroundColor: '#2d6a4f', color: 'white', borderRadius: '8px', padding: '15px', textAlign: 'center' }}>
-                <p style={{ margin: 0, fontSize: '14px' }}>Total a donar</p>
+                <p style={{ margin: 0, fontSize: '14px' }}>{t('donacion.totalDonar')}</p>
                 <p style={{ margin: '5px 0 0', fontSize: '28px', fontWeight: 'bold' }}>
                   {(donacionForm.cantidad_arboles * donacionEspecie.precio_plantacion).toFixed(2)}€
                 </p>
@@ -744,7 +747,7 @@ export default function EspeciesList() {
                     cursor: 'pointer'
                   }}
                 >
-                  Cancelar
+                  {t('common.cancelar')}
                 </button>
                 <button
                   type="submit"
@@ -761,7 +764,7 @@ export default function EspeciesList() {
                     cursor: savingDonacion ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {savingDonacion ? 'Procesando...' : '🌳 Confirmar Donacion'}
+                  {savingDonacion ? t('donacion.procesando') : t('donacion.confirmar')}
                 </button>
               </div>
             </form>

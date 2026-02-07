@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { logout, isAuthenticated } from '../services/authService';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function Navigation() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
+  const { language, toggleLanguage, t } = useTranslation();
 
   useEffect(() => {
     const handleAuthChange = () => setIsLoggedIn(isAuthenticated());
@@ -21,20 +23,24 @@ export default function Navigation() {
     <nav style={styles.nav}>
       <div style={styles.container}>
         <Link to="/" style={styles.logo}>
-          🌳 ReForest
+          {t('nav.logo')}
         </Link>
         <div style={styles.links}>
-          <Link to="/" style={styles.link}>Inicio</Link>
-          <Link to="/especies" style={styles.link}>Especies</Link>
-          <Link to="/donaciones" style={styles.link}>Donaciones</Link>
-          
+          <Link to="/" style={styles.link}>{t('nav.inicio')}</Link>
+          <Link to="/especies" style={styles.link}>{t('nav.especies')}</Link>
+          <Link to="/donaciones" style={styles.link}>{t('nav.donaciones')}</Link>
+
+          <button onClick={toggleLanguage} style={styles.langBtn}>
+            🌐 {language === 'es' ? 'EN' : 'ES'}
+          </button>
+
           {isLoggedIn ? (
             <button onClick={handleLogout} style={styles.logoutBtn}>
-              Cerrar Sesión
+              {t('nav.cerrarSesion')}
             </button>
           ) : (
             <>
-              <Link to="/login" style={styles.link}>Login</Link>
+              <Link to="/login" style={styles.link}>{t('nav.login')}</Link>
             </>
           )}
         </div>
@@ -73,6 +79,17 @@ const styles = {
     textDecoration: 'none',
     fontSize: '1rem',
     transition: 'opacity 0.3s',
+  },
+  langBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    color: 'white',
+    border: '1px solid rgba(255,255,255,0.5)',
+    padding: '0.4rem 0.8rem',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+    fontWeight: '600' as const,
+    transition: 'all 0.3s',
   },
   logoutBtn: {
     backgroundColor: 'transparent',

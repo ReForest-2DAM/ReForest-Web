@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getAllDonaciones, updateDonacion, deleteDonacion } from '../services';
 import { getCurrentUser } from '../services/authService';
 import type { Donacion } from '../types';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function DonacionesList() {
   const [donaciones, setDonaciones] = useState<Donacion[]>([]);
@@ -12,6 +13,7 @@ export default function DonacionesList() {
   const [editingDonacion, setEditingDonacion] = useState<Donacion | null>(null);
   const [editForm, setEditForm] = useState({ cantidad_arboles: 1, estado: '', pagado: false });
   const [isAdmin, setIsAdmin] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchDonaciones = async () => {
@@ -82,9 +84,9 @@ export default function DonacionesList() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
       if (axiosErr.response) {
-        alert(`Error del servidor: ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
+        alert(`${t('common.errorServidor')} ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
       } else {
-        alert(axiosErr.message || 'Error al actualizar la donacion');
+        alert(axiosErr.message || t('donaciones.errorActualizar'));
       }
     } finally {
       setSaving(false);
@@ -92,16 +94,16 @@ export default function DonacionesList() {
   };
 
   const handleDelete = async (donacion: Donacion) => {
-    if (!window.confirm(`¿Estas seguro de que quieres eliminar la donacion #${donacion.id}?`)) return;
+    if (!window.confirm(`${t('donaciones.confirmarEliminar')} #${donacion.id}?`)) return;
     try {
       await deleteDonacion(donacion.id);
       setDonaciones(donaciones.filter(d => d.id !== donacion.id));
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
       if (axiosErr.response) {
-        alert(`Error del servidor: ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
+        alert(`${t('common.errorServidor')} ${axiosErr.response.status} - ${JSON.stringify(axiosErr.response.data)}`);
       } else {
-        alert(axiosErr.message || 'Error al eliminar la donacion');
+        alert(axiosErr.message || t('donaciones.errorEliminar'));
       }
     }
   };
@@ -114,7 +116,7 @@ export default function DonacionesList() {
         fontSize: '20px',
         color: '#2d6a4f'
       }}>
-        💰 Cargando donaciones...
+        {t('donaciones.cargando')}
       </div>
     );
   }
@@ -127,7 +129,7 @@ export default function DonacionesList() {
         color: '#d00',
         fontSize: '18px'
       }}>
-        ❌ Error: {error}
+        ❌ {t('common.error')} {error}
       </div>
     );
   }
@@ -135,10 +137,10 @@ export default function DonacionesList() {
   return (
     <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
       <h1 style={{ color: '#2d6a4f', marginBottom: '10px' }}>
-        💰 Lista de Donaciones
+        {t('donaciones.titulo')}
       </h1>
       <p style={{ marginBottom: '2rem', color: '#555', fontSize: '16px' }}>
-        {donaciones.length} donaciones realizadas
+        {donaciones.length} {t('donaciones.realizadas')}
       </p>
 
       {donaciones.length === 0 ? (
@@ -150,10 +152,10 @@ export default function DonacionesList() {
           border: '2px dashed #2d6a4f'
         }}>
           <p style={{ fontSize: '1.2rem', color: '#2d6a4f', marginBottom: '1rem' }}>
-            🌱 Aún no hay donaciones registradas
+            {t('donaciones.noHay')}
           </p>
           <p style={{ color: '#666' }}>
-            Las donaciones aparecerán aquí cuando se realicen plantaciones
+            {t('donaciones.noHayDesc')}
           </p>
         </div>
       ) : (
@@ -192,7 +194,7 @@ export default function DonacionesList() {
                   textTransform: 'uppercase',
                   fontWeight: '600'
                 }}>
-                  Donante
+                  {t('donaciones.donante')}
                 </p>
                 <p style={{
                   fontSize: '18px',
@@ -213,7 +215,7 @@ export default function DonacionesList() {
                   textTransform: 'uppercase',
                   fontWeight: '600'
                 }}>
-                  Fecha
+                  {t('donaciones.fecha')}
                 </p>
                 <p style={{
                   fontSize: '16px',
@@ -237,7 +239,7 @@ export default function DonacionesList() {
                   textTransform: 'uppercase',
                   fontWeight: '600'
                 }}>
-                  Árboles
+                  {t('donaciones.arboles')}
                 </p>
                 <p style={{
                   fontSize: '22px',
@@ -258,7 +260,7 @@ export default function DonacionesList() {
                   textTransform: 'uppercase',
                   fontWeight: '600'
                 }}>
-                  Total
+                  {t('donaciones.total')}
                 </p>
                 <p style={{
                   fontSize: '22px',
@@ -279,7 +281,7 @@ export default function DonacionesList() {
                   textTransform: 'uppercase',
                   fontWeight: '600'
                 }}>
-                  Estado
+                  {t('donaciones.estado')}
                 </p>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{
@@ -303,7 +305,7 @@ export default function DonacionesList() {
                       fontSize: '13px',
                       fontWeight: 'bold'
                     }}>
-                      ✓ Pagado
+                      {t('donaciones.pagado')}
                     </span>
                   ) : (
                     <span style={{
@@ -314,7 +316,7 @@ export default function DonacionesList() {
                       fontSize: '13px',
                       fontWeight: 'bold'
                     }}>
-                      ⏳ Pendiente
+                      {t('donaciones.pendientePago')}
                     </span>
                   )}
                 </div>
@@ -331,9 +333,9 @@ export default function DonacionesList() {
                   alignItems: 'center'
                 }}>
                   <div style={{ fontSize: '12px', color: '#999', display: 'flex', gap: '1rem' }}>
-                    <span>ID Donación: #{donacion.id}</span>
-                    <span>ID Especie: #{donacion.especie?.id ?? donacion.id_especie}</span>
-                    <span>ID Usuario: #{donacion.usuario?.id ?? donacion.id_usuario}</span>
+                    <span>{t('donaciones.idDonacion')} #{donacion.id}</span>
+                    <span>{t('donaciones.idEspecie')} #{donacion.especie?.id ?? donacion.id_especie}</span>
+                    <span>{t('donaciones.idUsuario')} #{donacion.usuario?.id ?? donacion.id_usuario}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button
@@ -352,7 +354,7 @@ export default function DonacionesList() {
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9952b'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0ad4e'; }}
                     >
-                      ✏️ Editar
+                      {t('common.editar')}
                     </button>
                     <button
                       onClick={() => handleDelete(donacion)}
@@ -370,7 +372,7 @@ export default function DonacionesList() {
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b52b27'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#d9534f'; }}
                     >
-                      🗑️ Eliminar
+                      {t('common.eliminar')}
                     </button>
                   </div>
                 </div>
@@ -390,7 +392,7 @@ export default function DonacionesList() {
           border: '2px solid #2d6a4f'
         }}>
           <h2 style={{ color: '#2d6a4f', marginBottom: '1.5rem', textAlign: 'center' }}>
-            📊 Estadísticas Totales
+            {t('donaciones.estadisticas')}
           </h2>
           <div style={{
             display: 'grid',
@@ -402,28 +404,28 @@ export default function DonacionesList() {
               <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2d6a4f', margin: '0 0 0.5rem 0' }}>
                 {donaciones.reduce((sum, d) => sum + d.cantidad_arboles, 0)}
               </p>
-              <p style={{ color: '#555', fontSize: '1rem' }}>🌳 Árboles Totales</p>
+              <p style={{ color: '#555', fontSize: '1rem' }}>{t('donaciones.arbolesTotales')}</p>
             </div>
 
             <div>
               <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2d6a4f', margin: '0 0 0.5rem 0' }}>
                 {donaciones.reduce((sum, d) => sum + d.total_donado, 0).toFixed(2)}€
               </p>
-              <p style={{ color: '#555', fontSize: '1rem' }}>💰 Total Recaudado</p>
+              <p style={{ color: '#555', fontSize: '1rem' }}>{t('donaciones.totalRecaudado')}</p>
             </div>
 
             <div>
               <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2d6a4f', margin: '0 0 0.5rem 0' }}>
                 {donaciones.filter(d => d.pagado).length}
               </p>
-              <p style={{ color: '#555', fontSize: '1rem' }}>✓ Pagadas</p>
+              <p style={{ color: '#555', fontSize: '1rem' }}>{t('donaciones.pagadas')}</p>
             </div>
 
             <div>
               <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2d6a4f', margin: '0 0 0.5rem 0' }}>
                 {donaciones.filter(d => d.estado.toUpperCase() === 'COMPLETADA').length}
               </p>
-              <p style={{ color: '#555', fontSize: '1rem' }}>🎉 Completadas</p>
+              <p style={{ color: '#555', fontSize: '1rem' }}>{t('donaciones.completadas')}</p>
             </div>
           </div>
         </div>
@@ -458,7 +460,7 @@ export default function DonacionesList() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ color: '#2d6a4f', margin: 0 }}>✏️ Editar Donacion #{editingDonacion.id}</h2>
+              <h2 style={{ color: '#2d6a4f', margin: 0 }}>{t('donaciones.editarTitulo')} #{editingDonacion.id}</h2>
               <button
                 onClick={closeModal}
                 style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}
@@ -468,13 +470,13 @@ export default function DonacionesList() {
             </div>
 
             <div style={{ backgroundColor: '#f0f7f4', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '14px' }}>
-              <p style={{ margin: '4px 0' }}>👤 Donante: <strong>{editingDonacion.nombre_donante}</strong></p>
-              <p style={{ margin: '4px 0' }}>💵 Total: <strong>{editingDonacion.total_donado.toFixed(2)}€</strong></p>
+              <p style={{ margin: '4px 0' }}>{t('donaciones.donanteLabel')} <strong>{editingDonacion.nombre_donante}</strong></p>
+              <p style={{ margin: '4px 0' }}>{t('donaciones.totalLabel')} <strong>{editingDonacion.total_donado.toFixed(2)}€</strong></p>
             </div>
 
             <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Cantidad de arboles</label>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('donaciones.cantidadArboles')}</label>
                 <input
                   type="number"
                   required
@@ -486,15 +488,15 @@ export default function DonacionesList() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Estado</label>
+                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('donaciones.estadoLabel')}</label>
                 <select
                   value={editForm.estado}
                   onChange={(e) => setEditForm({ ...editForm, estado: e.target.value })}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
                 >
-                  <option value="PENDIENTE">PENDIENTE</option>
-                  <option value="completada">Completada</option>
-                  <option value="cancelada">Cancelada</option>
+                  <option value="PENDIENTE">{t('donaciones.pendiente')}</option>
+                  <option value="completada">{t('donaciones.completada')}</option>
+                  <option value="cancelada">{t('donaciones.cancelada')}</option>
                 </select>
               </div>
 
@@ -505,7 +507,7 @@ export default function DonacionesList() {
                   onChange={(e) => setEditForm({ ...editForm, pagado: e.target.checked })}
                   id="pagado-check"
                 />
-                <label htmlFor="pagado-check" style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Pagado</label>
+                <label htmlFor="pagado-check" style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>{t('donaciones.pagadoLabel')}</label>
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
@@ -524,7 +526,7 @@ export default function DonacionesList() {
                     cursor: 'pointer'
                   }}
                 >
-                  Cancelar
+                  {t('common.cancelar')}
                 </button>
                 <button
                   type="submit"
@@ -541,7 +543,7 @@ export default function DonacionesList() {
                     cursor: saving ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {saving ? 'Guardando...' : '✏️ Guardar Cambios'}
+                  {saving ? t('common.guardando') : t('common.guardarCambios')}
                 </button>
               </div>
             </form>

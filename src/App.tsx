@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { LanguageProvider } from './i18n/LanguageContext';
 import Navigation from './components/Navigation';
 import Home from './pages/Home';
 import EspeciesList from './pages/EspeciesList';
@@ -9,6 +10,7 @@ import Register from './pages/Register';
 
 function App() {
   return (
+    <LanguageProvider>
     <Router>
       <Navigation />
       <Routes>
@@ -20,6 +22,7 @@ function App() {
         <Route path="/register" element={<Register />} />
       </Routes>
     </Router>
+    </LanguageProvider>
   );
 }
 

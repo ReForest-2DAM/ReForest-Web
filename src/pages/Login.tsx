@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/authService';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -8,6 +9,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,16 +18,16 @@ export default function Login() {
 
     try {
       await login({ email, contrasena: password });
-      navigate('/'); // Redirigir al home
+      navigate('/');
     } catch (err: unknown) {
       console.error('Error de login:', err);
       const error = err as { response?: { status: number; data: unknown }; message?: string };
       if (error.message) {
         setError(error.message);
       } else if (error.response) {
-        setError(`Error del servidor (${error.response.status}): ${JSON.stringify(error.response.data)}`);
+        setError(`${t('common.errorServidor')} ${error.response.status} - ${JSON.stringify(error.response.data)}`);
       } else {
-        setError('Error de conexion con el servidor');
+        setError(t('login.errorConexion'));
       }
     } finally {
       setLoading(false);
@@ -35,15 +37,15 @@ export default function Login() {
   return (
     <div style={styles.container}>
       <form onSubmit={handleSubmit} style={styles.form}>
-        <h2 style={styles.title}>🔐 Iniciar Sesión</h2>
-        
+        <h2 style={styles.title}>{t('login.titulo')}</h2>
+
         {error && <p style={styles.error}>{error}</p>}
-        
+
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Email:</label>
+          <label style={styles.label}>{t('login.email')}</label>
           <input
             type="email"
-            placeholder="tu@email.com"
+            placeholder={t('login.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={styles.input}
@@ -51,12 +53,12 @@ export default function Login() {
             disabled={loading}
           />
         </div>
-        
+
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Contraseña:</label>
+          <label style={styles.label}>{t('login.password')}</label>
           <input
             type="password"
-            placeholder="••••••••"
+            placeholder={t('login.passwordPlaceholder')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={styles.input}
@@ -64,17 +66,17 @@ export default function Login() {
             disabled={loading}
           />
         </div>
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           style={loading ? {...styles.button, ...styles.buttonDisabled} : styles.button}
           disabled={loading}
         >
-          {loading ? 'Iniciando sesión...' : 'Entrar'}
+          {loading ? t('login.loading') : t('login.entrar')}
         </button>
 
         <p style={styles.registerLink}>
-          ¿No tienes cuenta? <Link to="/register" style={styles.link}>Regístrate aquí</Link>
+          {t('login.noTienesCuenta')} <Link to="/register" style={styles.link}>{t('login.registrate')}</Link>
         </p>
       </form>
     </div>

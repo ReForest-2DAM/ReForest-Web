@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div style={{
@@ -15,7 +17,7 @@ export default function Home() {
         fontSize: '3rem',
         marginBottom: '1rem'
       }}>
-        🌳 Bienvenido a ReForest
+        {t('home.titulo')}
       </h1>
 
       <p style={{
@@ -23,7 +25,7 @@ export default function Home() {
         color: '#555',
         marginBottom: '2rem'
       }}>
-        Planta árboles y contribuye a un futuro más verde
+        {t('home.subtitulo')}
       </p>
 
       <div style={{
@@ -55,9 +57,9 @@ export default function Home() {
             e.currentTarget.style.backgroundColor = '#f0f8f5';
           }}
         >
-          <h2 style={{ color: '#2d6a4f', marginBottom: '1rem' }}>🌲 Especies</h2>
+          <h2 style={{ color: '#2d6a4f', marginBottom: '1rem' }}>{t('home.especiesTitulo')}</h2>
           <p style={{ color: '#555' }}>
-            Explora nuestro catálogo de árboles disponibles para plantar
+            {t('home.especiesDesc')}
           </p>
         </div>
 
@@ -84,9 +86,9 @@ export default function Home() {
             e.currentTarget.style.backgroundColor = '#f0f8f5';
           }}
         >
-          <h2 style={{ color: '#2d6a4f', marginBottom: '1rem' }}>💚 Donaciones</h2>
+          <h2 style={{ color: '#2d6a4f', marginBottom: '1rem' }}>{t('home.donacionesTitulo')}</h2>
           <p style={{ color: '#555' }}>
-            Realiza tu donación y ayuda a reforestar el planeta
+            {t('home.donacionesDesc')}
           </p>
         </div>
       </div>
