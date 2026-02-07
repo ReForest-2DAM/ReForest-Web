@@ -151,6 +151,11 @@ export const translations: Record<string, Record<Language, string>> = {
   'donaciones.cancelada': { es: 'Cancelada', en: 'Cancelled' },
   'donaciones.pagadoLabel': { es: 'Pagado', en: 'Paid' },
 
+  // === 404 NOT FOUND ===
+  'notFound.titulo': { es: 'Pagina no encontrada', en: 'Page not found' },
+  'notFound.mensaje': { es: 'La pagina que buscas no existe o ha sido movida.', en: 'The page you are looking for does not exist or has been moved.' },
+  'notFound.volver': { es: 'Volver al inicio', en: 'Go back home' },
+
   // === COMMON ===
   'common.editar': { es: '✏️ Editar', en: '✏️ Edit' },
   'common.eliminar': { es: '🗑️ Eliminar', en: '🗑️ Delete' },
