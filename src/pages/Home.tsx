@@ -89,35 +89,6 @@ export default function Home() {
             Realiza tu donación y ayuda a reforestar el planeta
           </p>
         </div>
-
-        {/* Tarjeta Impacto */}
-        <div
-          style={{
-            padding: '2rem',
-            backgroundColor: '#f0f8f5',
-            borderRadius: '12px',
-            border: '2px solid #2d6a4f',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-          }}
-          onClick={() => navigate('/especies')}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-8px)';
-            e.currentTarget.style.boxShadow = '0 8px 20px rgba(45,106,79,0.3)';
-            e.currentTarget.style.backgroundColor = '#e8f5e9';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-            e.currentTarget.style.backgroundColor = '#f0f8f5';
-          }}
-        >
-          <h2 style={{ color: '#2d6a4f', marginBottom: '1rem' }}>🌍 Impacto</h2>
-          <p style={{ color: '#555' }}>
-            Cada árbol plantado contribuye a reducir el CO₂
-          </p>
-        </div>
       </div>
     </div>
   );

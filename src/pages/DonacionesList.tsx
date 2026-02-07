@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAllDonaciones, updateDonacion, deleteDonacion } from '../services';
+import { getCurrentUser } from '../services/authService';
 import type { Donacion } from '../types';
 
 export default function DonacionesList() {
@@ -10,18 +11,36 @@ export default function DonacionesList() {
   const [saving, setSaving] = useState(false);
   const [editingDonacion, setEditingDonacion] = useState<Donacion | null>(null);
   const [editForm, setEditForm] = useState({ cantidad_arboles: 1, estado: '', pagado: false });
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchDonaciones = async () => {
       try {
+        const usuario = await getCurrentUser();
+        const esAdmin = usuario.rol.toUpperCase() === 'ADMIN';
+        setIsAdmin(esAdmin);
+
+        // Obtener todas las donaciones
         const data = await getAllDonaciones();
-        setDonaciones(data);
+
+        // Si es admin, mostrar todas; si no, solo las del usuario actual
+        if (esAdmin) {
+          setDonaciones(data);
+        } else {
+          // Filtrar solo las donaciones del usuario actual
+          const donacionesUsuario = data.filter(d => {
+            const donacionUsuarioId = d.usuario?.id ?? d.id_usuario;
+            return donacionUsuarioId === usuario.id;
+          });
+          setDonaciones(donacionesUsuario);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al cargar las donaciones');
       } finally {
         setLoading(false);
       }
     };
+
     fetchDonaciones();
   }, []);
 
@@ -301,59 +320,61 @@ export default function DonacionesList() {
                 </div>
               </div>
 
-              {/* Botones Editar / Eliminar */}
-              <div style={{
-                gridColumn: '1 / -1',
-                paddingTop: '0.5rem',
-                borderTop: '1px solid #e0e0e0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div style={{ fontSize: '12px', color: '#999', display: 'flex', gap: '1rem' }}>
-                  <span>ID Donación: #{donacion.id}</span>
-                  <span>ID Especie: #{donacion.especie?.id ?? donacion.id_especie}</span>
-                  <span>ID Usuario: #{donacion.usuario?.id ?? donacion.id_usuario}</span>
+              {/* Botones Editar / Eliminar - Solo para ADMIN */}
+              {isAdmin && (
+                <div style={{
+                  gridColumn: '1 / -1',
+                  paddingTop: '0.5rem',
+                  borderTop: '1px solid #e0e0e0',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div style={{ fontSize: '12px', color: '#999', display: 'flex', gap: '1rem' }}>
+                    <span>ID Donación: #{donacion.id}</span>
+                    <span>ID Especie: #{donacion.especie?.id ?? donacion.id_especie}</span>
+                    <span>ID Usuario: #{donacion.usuario?.id ?? donacion.id_usuario}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => handleEditClick(donacion)}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#f0ad4e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.3s'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9952b'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0ad4e'; }}
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(donacion)}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#d9534f',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.3s'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b52b27'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#d9534f'; }}
+                    >
+                      🗑️ Eliminar
+                    </button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    onClick={() => handleEditClick(donacion)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#f0ad4e',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.3s'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9952b'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0ad4e'; }}
-                  >
-                    ✏️ Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(donacion)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#d9534f',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.3s'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b52b27'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#d9534f'; }}
-                  >
-                    🗑️ Eliminar
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           ))}
         </div>
