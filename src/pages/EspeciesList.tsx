@@ -46,20 +46,21 @@ export default function EspeciesList() {
     setSavingDonacion(true);
     try {
       const usuario = await getCurrentUser();
-      const donacion: DonacionFormData = {
+      const totalDonado = donacionForm.cantidad_arboles * donacionEspecie.precio_plantacion;
+      const donacion = {
         fecha: new Date().toISOString().split('T')[0] + 'T00:00:00',
-        nombre_donante: donacionForm.nombre_donante,
+        nombre_donante: usuario.nombre,
         cantidad_arboles: donacionForm.cantidad_arboles,
-        total_donado: donacionForm.cantidad_arboles * donacionEspecie.precio_plantacion,
+        total_donado: totalDonado,
         estado: 'PENDIENTE',
         pagado: false,
-        id_especie: donacionEspecie.id,
-        id_usuario: usuario.id
+        especie: { id: donacionEspecie.id },
+        usuario: { id: usuario.id }
       };
       console.log('📤 Creando donacion:', donacion);
-      await createDonacion(donacion);
+      await createDonacion(donacion as unknown as DonacionFormData);
       closeDonacionModal();
-      alert(`Donacion creada: ${donacionForm.cantidad_arboles} arbol(es) de ${donacionEspecie.nombre_comun} por ${donacion.total_donado}€`);
+      alert(`Donacion creada: ${donacionForm.cantidad_arboles} arbol(es) de ${donacionEspecie.nombre_comun} por ${totalDonado}€`);
     } catch (err: unknown) {
       console.error('❌ Error completo:', err);
       const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
@@ -687,17 +688,6 @@ export default function EspeciesList() {
             </div>
 
             <form onSubmit={handleDonacionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Nombre del donante</label>
-                <input
-                  type="text"
-                  required
-                  value={donacionForm.nombre_donante}
-                  onChange={(e) => setDonacionForm({ ...donacionForm, nombre_donante: e.target.value })}
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' }}
-                />
-              </div>
-
               <div>
                 <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>Cantidad de arboles</label>
                 <input
