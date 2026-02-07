@@ -25,6 +25,8 @@ export default function EspeciesList() {
   const [donacionEspecie, setDonacionEspecie] = useState<Especie | null>(null);
   const [donacionForm, setDonacionForm] = useState({ nombre_donante: '', cantidad_arboles: 1 });
   const [savingDonacion, setSavingDonacion] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const handlePlantarClick = (especie: Especie) => {
     if (!isAuthenticated()) {
       alert('Debes iniciar sesion para poder realizar una donacion.');
@@ -169,7 +171,17 @@ export default function EspeciesList() {
       }
     };
 
+    const checkAdmin = async () => {
+      try {
+        const usuario = await getCurrentUser();
+        setIsAdmin(usuario.rol.toUpperCase() === 'ADMIN');
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
     fetchEspecies();
+    checkAdmin();
   }, []);
 
   if (loading) {
@@ -207,36 +219,39 @@ export default function EspeciesList() {
         {especies.length} especies disponibles para plantar
       </p>
 
-      <button
-        onClick={() => setShowModal(true)}
-        style={{
-          marginBottom: '2rem',
-          padding: '12px 24px',
-          backgroundColor: '#2d6a4f',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#1f4d37';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#2d6a4f';
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
-      >
-        ➕ Crear Nueva Especie
-      </button>
+      {/* Botón Crear Especie - Solo para ADMIN */}
+      {isAdmin && (
+        <button
+          onClick={() => setShowModal(true)}
+          style={{
+            marginBottom: '2rem',
+            padding: '12px 24px',
+            backgroundColor: '#2d6a4f',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#1f4d37';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#2d6a4f';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          ➕ Crear Nueva Especie
+        </button>
+      )}
 
       {especies.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#999' }}>
@@ -402,47 +417,49 @@ export default function EspeciesList() {
                   </button>
                 )}
 
-                {/* Botones Editar / Eliminar */}
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  <button
-                    onClick={() => handleEditClick(especie)}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      backgroundColor: '#f0ad4e',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.3s'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9952b'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0ad4e'; }}
-                  >
-                    ✏️ Editar
-                  </button>
-                  <button
-                    onClick={() => handleDeleteEspecie(especie)}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      backgroundColor: '#d9534f',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.3s'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b52b27'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#d9534f'; }}
-                  >
-                    🗑️ Eliminar
-                  </button>
-                </div>
+                {/* Botones Editar / Eliminar - Solo para ADMIN */}
+                {isAdmin && (
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    <button
+                      onClick={() => handleEditClick(especie)}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        backgroundColor: '#f0ad4e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.3s'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9952b'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0ad4e'; }}
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteEspecie(especie)}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        backgroundColor: '#d9534f',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.3s'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b52b27'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#d9534f'; }}
+                    >
+                      🗑️ Eliminar
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
