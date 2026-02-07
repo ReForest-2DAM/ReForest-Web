@@ -7,6 +7,7 @@ import EspecieDetail from './pages/EspecieDetail';
 import DonacionesList from './pages/DonacionesList';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/donaciones" element={<DonacionesList />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
     </LanguageProvider>
