@@ -421,7 +421,7 @@ export default function DonacionesList() {
 
             <div>
               <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2d6a4f', margin: '0 0 0.5rem 0' }}>
-                {donaciones.filter(d => d.estado === 'completada').length}
+                {donaciones.filter(d => d.estado.toUpperCase() === 'COMPLETADA').length}
               </p>
               <p style={{ color: '#555', fontSize: '1rem' }}>🎉 Completadas</p>
             </div>
